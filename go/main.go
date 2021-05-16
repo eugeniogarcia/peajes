@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
+	"sync"
 	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/eugeniogarcia/peajes/servicio"
+
 )
 
 var peticionesTotales = prometheus.NewCounterVec(
@@ -73,6 +75,10 @@ func (rw *responseWriter) WriteHeader(code int) {
 }
 
 func main() {
+	var cfg Config
+    cargar(&cfg)
+    fmt.Printf("%+v", cfg)
+
 	router := mux.NewRouter()
 	router.Use(prometheusMiddleware)
 
@@ -81,8 +87,15 @@ func main() {
 	// Serving static files
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
 
-	fmt.Println("Sirviendo peticiones en el puerto 9000")
-	err := http.ListenAndServe(":9000", router)
-	log.Fatal(err)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	servicio.New(&wg).Start();
 
+	go func(){
+		fmt.Println("Sirviendo peticiones en el puerto 9000")
+		err := http.ListenAndServe(":9000", router)
+		log.Fatal(err)
+	}()
+
+	wg.Wait()
 }
