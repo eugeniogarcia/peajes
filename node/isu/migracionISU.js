@@ -1,13 +1,24 @@
 function batch(id,procesados, fallados, pendientes){
     return {
-        batch: id,
-        processed_records: procesados,
-        failed_records: fallados,
-        un_processed_records: pendientes,
+        batch: id.toString(),
+        processed_records: procesados.toString(),
+        failed_records: fallados.toString(),
+        un_processed_records: pendientes.toString(),
         actualiza: function(error) {
-            if (this.un_processed_records>0){
-                this.un_processed_records--;
-                error ? this.failed_records++ : this.processed_records++;
+            let val = Number(this.un_processed_records)
+            if (val>0){
+                val--;
+                this.un_processed_records=val.toString();
+                if(error){
+                    val = Number(this.failed_records);
+                    val++;
+                    this.failed_records = val.toString()
+                } 
+                else{
+                    val = Number(this.processed_records);
+                    val++;
+                    this.processed_records = val.toString();
+                }
             } 
         }
     }
