@@ -84,8 +84,7 @@ func main() {
 
 	// Configura el endpoint de Prometheus
 	router.Path("/metrics").Handler(promhttp.Handler())
-	//EGSM
-	//router.Path("/batches").Handler()
+	router.Path("/batches").Handler(&servicio.InformacionBatches)
 
 	// Indica desde donde poder servir recursos estáticos
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))

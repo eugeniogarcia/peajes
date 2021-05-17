@@ -1,12 +1,14 @@
 package servicio
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"strconv"
 )
 
-var informacionBatches Batches = Batches{Batches: make(map[string]*Batch), Frecuencia: 60}
+var InformacionBatches Batches = Batches{Batches: make(map[string]*Batch), Frecuencia: 60}
 
 type Batches struct {
 	Batches    map[string]*Batch
@@ -61,7 +63,7 @@ func (batches *Batches) Tasa() (float32, int, float32, int) {
 		total += val.Acumulado
 		total_err += val.Acumulado_Err
 	}
-	return float32(total) / float32(batches.Frecuencia), total, float32(total_err) / float32(batches.Frecuencia), total_err
+	return float32(total) / float32(batches.Frecuencia) * 60, total, float32(total_err) / float32(batches.Frecuencia) * 60, total_err
 }
 
 func creaBatch(proc string, fail string, pdte string) *Batch {
@@ -72,7 +74,10 @@ func creaBatch(proc string, fail string, pdte string) *Batch {
 	return &Batch{0, 0, 0, procesado, fallado, pendiente, 0, 0, true}
 }
 
-/*func (batches *Batches) ServeHTTP(ResponseWriter, *Request) {
+const JSON = "application/json"
 
+func (batches *Batches) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	rw.WriteHeader(http.StatusOK)
+	rw.Header().Set("Content-Type", JSON)
+	json.NewEncoder(rw).Encode(batches)
 }
-*/

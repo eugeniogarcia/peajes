@@ -32,7 +32,7 @@ func (r *Runner) Start(entrada string, host string, puerto string, frecuencia in
 	//Nos subscribimos a las interrupciones del SSOO
 	signal.Notify(r.interrupt, os.Interrupt)
 	//Guardamos la frecuencia
-	informacionBatches.Frecuencia = frecuencia
+	InformacionBatches.Frecuencia = frecuencia
 
 	//Prepara la entrada
 	valores := strings.Split(entrada, ",")
@@ -82,11 +82,13 @@ func monitorISU(uri string, entrada string) bool {
 	resp, err := http.Get(uri)
 	if err != nil {
 		log.Println(err)
+		return false
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err)
+		return false
 	}
 
 	defer resp.Body.Close()
@@ -99,14 +101,14 @@ func procesa(body []byte) bool {
 	json.Unmarshal(body, &respuesta)
 
 	for _, medida := range respuesta {
-		informacionBatches.Add(medida.Batch, medida.Procesados, medida.Fallados, medida.Pendientes)
+		InformacionBatches.Add(medida.Batch, medida.Procesados, medida.Fallados, medida.Pendientes)
 	}
-	vel, num, vel_err, num_err := informacionBatches.Tasa()
+	vel, num, vel_err, num_err := InformacionBatches.Tasa()
 
 	log.Println(fmt.Sprintf("Tasa: %.2f Procesados: %d Tasa de Errores: %.2f Numero de Errores: %d", vel, num, vel_err, num_err))
 
 	//Comprueba si hay actividad
-	for _, val := range informacionBatches.Batches {
+	for _, val := range InformacionBatches.Batches {
 		if val.Activo {
 			return false
 		}
