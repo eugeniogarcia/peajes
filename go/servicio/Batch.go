@@ -74,10 +74,8 @@ func creaBatch(proc string, fail string, pdte string) *Batch {
 	return &Batch{0, 0, 0, procesado, fallado, pendiente, 0, 0, true}
 }
 
-const JSON = "application/json"
-
 func (batches *Batches) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	rw.WriteHeader(http.StatusOK)
-	rw.Header().Set("Content-Type", JSON)
+	rw.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(batches)
 }
