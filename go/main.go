@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sync"
 	"strconv"
+	"sync"
 
+	"github.com/eugeniogarcia/peajes/servicio"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/eugeniogarcia/peajes/servicio"
-
 )
 
 var peticionesTotales = prometheus.NewCounterVec(
@@ -75,27 +74,34 @@ func (rw *responseWriter) WriteHeader(code int) {
 }
 
 func main() {
+	//Carga la configuración
 	var cfg Config
-    cargar(&cfg)
-    fmt.Printf("%+v", cfg)
+	cargar(&cfg)
 
+	//Prepara los routers
 	router := mux.NewRouter()
 	router.Use(prometheusMiddleware)
 
-	// Prometheus endpoint
+	// Configura el endpoint de Prometheus
 	router.Path("/metrics").Handler(promhttp.Handler())
-	// Serving static files
+	//EGSM
+	//router.Path("/batches").Handler()
+
+	// Indica desde donde poder servir recursos estáticos
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
 
+	//Prepara la llamada a ISU
 	var wg sync.WaitGroup
 	wg.Add(1)
-	servicio.New(&wg).Start();
+	servicio.New(&wg).Start(cfg.ListaBatchs, cfg.Server.Host, cfg.Server.Port, cfg.Frecuencia)
 
-	go func(){
+	//Arranca el servidor http
+	go func() {
 		fmt.Println("Sirviendo peticiones en el puerto 9000")
 		err := http.ListenAndServe(":9000", router)
 		log.Fatal(err)
 	}()
 
+	//Esperamos hasta que termine el monitoreo de ISU
 	wg.Wait()
 }
