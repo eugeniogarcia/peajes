@@ -48,8 +48,9 @@ setInterval(function () {
         elapsed_batches[i]+=intervalo;
 
         //Simula la cancelación
-        if (Math.floor(Math.random() * 1000) < probabilidad_cancelar) 
-        elapsed_batches[i]=-1000000;
+        if (Math.floor(Math.random() * 1000) < probabilidad_cancelar) {
+            elapsed_batches[i]=-1000000;
+        }
         
         //Simula el procesamiento
         //Si se ha procesado ya...

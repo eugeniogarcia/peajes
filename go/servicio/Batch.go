@@ -6,13 +6,15 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-)
 
-var InformacionBatches Batches = Batches{Batches: make(map[string]*Batch), Frecuencia: 60}
+	"github.com/prometheus/client_golang/prometheus"
+)
 
 type Batches struct {
 	Batches    map[string]*Batch
 	Frecuencia int
+	Totales    *prometheus.GaugeVec
+	Errores    *prometheus.GaugeVec
 }
 
 type Batch struct {
@@ -98,11 +100,10 @@ type ResumenBatches struct {
 	BatchesNoActivo []*BatchNoActivo
 }
 
-
 func (batches *Batches) Resumen(rw http.ResponseWriter, r *http.Request) {
 	respuesta := ResumenBatches{
-		BatchesActivo:   make([]*BatchActivo, len(batches.Batches),len(batches.Batches)),
-		BatchesNoActivo: make([]*BatchNoActivo, 0,0)}
+		BatchesActivo:   make([]*BatchActivo, 0, 0),
+		BatchesNoActivo: make([]*BatchNoActivo, 0, 0)}
 
 	for batch, val := range batches.Batches {
 		switch val.Activo {
@@ -126,4 +127,18 @@ func (batches *Batches) Resumen(rw http.ResponseWriter, r *http.Request) {
 	}
 	rw.WriteHeader(http.StatusOK)
 	json.NewEncoder(rw).Encode(respuesta)
+}
+
+func (batches *Batches) promError(batch string, errores string) {
+	if batches.Errores != nil {
+		val, _ := strconv.Atoi(errores)
+		batches.Errores.WithLabelValues(batch).Add(float64(val))
+	}
+}
+
+func (batches *Batches) promTotales(batch string, totales string) {
+	if batches.Totales != nil {
+		val, _ := strconv.Atoi(totales)
+		batches.Totales.WithLabelValues(batch).Add(float64(val))
+	}
 }

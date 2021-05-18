@@ -14,6 +14,21 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+var procesadosTotales = prometheus.NewGaugeVec(
+	prometheus.GaugeOpts{
+		Name: "instalaciones_total",
+		Help: "Numero de instalaciones procesadas.",
+	},
+	[]string{"batchid"},
+)
+var erroresTotales = prometheus.NewGaugeVec(
+	prometheus.GaugeOpts{
+		Name: "instalaciones_error_total",
+		Help: "Numero de instalaciones con error.",
+	},
+	[]string{"batchid"},
+)
+
 var peticionesTotales = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Name: "http_requests_total",
@@ -39,6 +54,8 @@ func init() {
 	prometheus.Register(peticionesTotales)
 	prometheus.Register(estadoRespuesta)
 	prometheus.Register(duracionHttp)
+	prometheus.Register(erroresTotales)
+	prometheus.Register(procesadosTotales)
 }
 
 func prometheusMiddleware(next http.Handler) http.Handler {
@@ -80,8 +97,6 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.ResponseWriter.WriteHeader(code)
 }
 
-
-
 func main() {
 	//Carga la configuración
 	var cfg Config
@@ -95,7 +110,7 @@ func main() {
 	// Configura el endpoint de Prometheus
 	router.Path("/metrics").Handler(promhttp.Handler())
 	router.Path("/batches").Handler(&servicio.InformacionBatches)
-	router.HandleFunc("/resumen",servicio.InformacionBatches.Resumen)
+	router.HandleFunc("/resumen", servicio.InformacionBatches.Resumen)
 
 	// Indica desde donde poder servir recursos estáticos
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
@@ -103,7 +118,7 @@ func main() {
 	//Prepara la llamada a ISU
 	var wg sync.WaitGroup
 	wg.Add(1)
-	servicio.New(&wg).Start(cfg.ListaBatchs, cfg.Server.Host, cfg.Server.Port, cfg.Frecuencia)
+	servicio.New(&wg).Start(cfg.ListaBatchs, cfg.Server.Host, cfg.Server.Port, cfg.Frecuencia, procesadosTotales, erroresTotales)
 
 	//Arranca el servidor http
 	go func() {

@@ -8,10 +8,15 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
 )
+
+var InformacionBatches Batches = Batches{Batches: make(map[string]*Batch), Frecuencia: 60}
 
 type Runner struct {
 	interrupt chan os.Signal
@@ -27,12 +32,15 @@ func New(wg *sync.WaitGroup) *Runner {
 	}
 }
 
-func (r *Runner) Start(entrada string, host string, puerto string, frecuencia int) {
+func (r *Runner) Start(entrada string, host string, puerto string, frecuencia int, totales *prometheus.GaugeVec, errores *prometheus.GaugeVec) {
 
 	//Nos subscribimos a las interrupciones del SSOO
 	signal.Notify(r.interrupt, os.Interrupt)
 	//Guardamos la frecuencia
 	InformacionBatches.Frecuencia = frecuencia
+	//Gauges de Prometheus
+	InformacionBatches.Totales = totales
+	InformacionBatches.Errores = errores
 
 	//Prepara la entrada
 	valores := strings.Split(entrada, ",")
@@ -102,8 +110,14 @@ func procesa(body []byte) bool {
 
 	for _, medida := range respuesta {
 		InformacionBatches.Add(medida.Batch, medida.Procesados, medida.Fallados, medida.Pendientes)
+		InformacionBatches.promError(medida.Batch, medida.Fallados)
+		InformacionBatches.promTotales(medida.Batch, medida.Procesados)
 	}
 	vel, num, vel_err, num_err := InformacionBatches.Tasa()
+	val := strconv.Itoa(num_err)
+	InformacionBatches.promError("Total", val)
+	val = strconv.Itoa(num)
+	InformacionBatches.promTotales("Total", val)
 
 	log.Println(fmt.Sprintf("Tasa: %.2f Procesados: %d Tasa de Errores: %.2f Numero de Errores: %d", vel, num, vel_err, num_err))
 
