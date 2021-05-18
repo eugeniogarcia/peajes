@@ -76,6 +76,54 @@ func creaBatch(proc string, fail string, pdte string) *Batch {
 
 func (batches *Batches) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	rw.WriteHeader(http.StatusOK)
-	rw.Header().Add("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(batches)
+}
+
+type BatchActivo struct {
+	Batch         string
+	Procesados    int
+	Fallados      int
+	Pendientes    int
+	Acumulado     float32
+	Acumulado_Err float32
+}
+type BatchNoActivo struct {
+	Batch      string
+	Procesados int
+	Fallados   int
+	Pendientes int
+}
+type ResumenBatches struct {
+	BatchesActivo   []*BatchActivo
+	BatchesNoActivo []*BatchNoActivo
+}
+
+
+func (batches *Batches) Resumen(rw http.ResponseWriter, r *http.Request) {
+	respuesta := ResumenBatches{
+		BatchesActivo:   make([]*BatchActivo, len(batches.Batches),len(batches.Batches)),
+		BatchesNoActivo: make([]*BatchNoActivo, 0,0)}
+
+	for batch, val := range batches.Batches {
+		switch val.Activo {
+		case true:
+			respuesta.BatchesActivo = append(respuesta.BatchesActivo, &BatchActivo{
+				Batch:         batch,
+				Procesados:    val.Procesados,
+				Fallados:      val.Fallados,
+				Pendientes:    val.Pendientes,
+				Acumulado:     float32(val.Acumulado) / float32(batches.Frecuencia),
+				Acumulado_Err: float32(val.Acumulado_Err) / float32(batches.Frecuencia),
+			})
+		case false:
+			respuesta.BatchesNoActivo = append(respuesta.BatchesNoActivo, &BatchNoActivo{
+				Batch:      batch,
+				Procesados: val.Procesados,
+				Fallados:   val.Fallados,
+				Pendientes: val.Pendientes,
+			})
+		}
+	}
+	rw.WriteHeader(http.StatusOK)
+	json.NewEncoder(rw).Encode(respuesta)
 }

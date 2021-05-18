@@ -59,6 +59,13 @@ func prometheusMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func commonMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		next.ServeHTTP(w, r)
+	})
+}
+
 type responseWriter struct {
 	http.ResponseWriter
 	statusCode int
@@ -73,6 +80,8 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.ResponseWriter.WriteHeader(code)
 }
 
+
+
 func main() {
 	//Carga la configuración
 	var cfg Config
@@ -81,10 +90,12 @@ func main() {
 	//Prepara los routers
 	router := mux.NewRouter()
 	router.Use(prometheusMiddleware)
+	router.Use(commonMiddleware)
 
 	// Configura el endpoint de Prometheus
 	router.Path("/metrics").Handler(promhttp.Handler())
 	router.Path("/batches").Handler(&servicio.InformacionBatches)
+	router.HandleFunc("/resumen",servicio.InformacionBatches.Resumen)
 
 	// Indica desde donde poder servir recursos estáticos
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
