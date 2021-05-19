@@ -88,7 +88,6 @@ func (r *Runner) run(entrada string, uri string, frecuencia int) {
 }
 
 func monitorISU(uri string, entrada string) bool {
-
 	var jsonStr = []byte(entrada)
 	req, err := http.NewRequest(http.MethodGet, uri, bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
@@ -99,7 +98,6 @@ func monitorISU(uri string, entrada string) bool {
 	}
 	resp, err := http.DefaultClient.Do(req)
 
-	//resp, err := http.Get(uri)
 	if err != nil {
 		log.Println(err)
 		return false
