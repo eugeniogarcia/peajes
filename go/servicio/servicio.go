@@ -47,7 +47,7 @@ func (r *Runner) Start(entrada string, host string, puerto string, frecuencia in
 	valores := strings.Split(entrada, ",")
 	var input = make([]string, len(valores))
 	for i, val := range valores {
-		input[i] = fmt.Sprintf("'batchid':%s", val)
+		input[i] = fmt.Sprintf("\"batchid\":%s", val)
 	}
 	entrada_final := "{" + strings.Join(input, ",") + "}"
 

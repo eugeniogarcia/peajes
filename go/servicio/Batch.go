@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -42,9 +43,9 @@ func (batches *Batches) Add(batch string, proc string, fail string, pdte string)
 		val.Fallados_prev = val.Fallados
 		val.Pendientes_prev = val.Pendientes
 		val.Procesados_prev = val.Procesados
-		val.Fallados, _ = strconv.Atoi(fail)
-		val.Pendientes, _ = strconv.Atoi(pdte)
-		val.Procesados, _ = strconv.Atoi(proc)
+		val.Fallados, _ = strconv.Atoi(strings.TrimSpace(fail))
+		val.Pendientes, _ = strconv.Atoi(strings.TrimSpace(pdte))
+		val.Procesados, _ = strconv.Atoi(strings.TrimSpace(proc))
 		val.Acumulado_Err = val.Fallados - val.Fallados_prev
 		val.Acumulado = val.Pendientes_prev - val.Pendientes
 		if val.Acumulado == 0 {
@@ -70,9 +71,9 @@ func (batches *Batches) Tasa() (float32, int, float32, int) {
 
 func creaBatch(proc string, fail string, pdte string) *Batch {
 
-	procesado, _ := strconv.Atoi(proc)
-	fallado, _ := strconv.Atoi(fail)
-	pendiente, _ := strconv.Atoi(pdte)
+	procesado, _ := strconv.Atoi(strings.TrimSpace(proc))
+	fallado, _ := strconv.Atoi(strings.TrimSpace(fail))
+	pendiente, _ := strconv.Atoi(strings.TrimSpace(pdte))
 	return &Batch{0, 0, 0, procesado, fallado, pendiente, 0, 0, true}
 }
 
@@ -131,14 +132,14 @@ func (batches *Batches) Resumen(rw http.ResponseWriter, r *http.Request) {
 
 func (batches *Batches) promError(batch string, errores string) {
 	if batches.Errores != nil {
-		val, _ := strconv.Atoi(errores)
+		val, _ := strconv.Atoi(strings.TrimSpace(errores))
 		batches.Errores.WithLabelValues(batch).Add(float64(val))
 	}
 }
 
 func (batches *Batches) promTotales(batch string, totales string) {
 	if batches.Totales != nil {
-		val, _ := strconv.Atoi(totales)
+		val, _ := strconv.Atoi(strings.TrimSpace(totales))
 		batches.Totales.WithLabelValues(batch).Add(float64(val))
 	}
 }

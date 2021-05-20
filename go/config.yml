@@ -1,6 +1,6 @@
 # Server configurations
 isu:
-  host: "localhost"
-  port: 3000
+  host: "10.92.65.132"
+  port: 8000
 frecuencia: 60
-lista: 1000, 1001, 1002, 1003, 1004, 1005, 1006
+lista: 939495
