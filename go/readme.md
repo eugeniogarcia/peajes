@@ -1,3 +1,11 @@
 - The metric needs to be created using the prometheus package. The NewCounterVec() method is used to create a new counter metric.
 - To expose the created metric in the HTTP handler we must register the metric to Prometheus using the register() method.
 - Lastly, we need to implement the functionality of the metric in our code. Here we created and registered a new HTTP middleware that runs every time the server receives an HTTP request and increases the metric counter using the Inc() method.
+
+
+
+```pql
+rate(instalaciones_total{batchid="Total", instance="localhost:9000", job="golang"}[6m])*60
+
+instalaciones_total{batchid="Total", instance="localhost:9000", job="golang"}
+```

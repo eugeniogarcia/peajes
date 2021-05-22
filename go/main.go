@@ -28,6 +28,13 @@ var erroresTotales = prometheus.NewGaugeVec(
 	},
 	[]string{"batchid"},
 )
+var activos = prometheus.NewGaugeVec(
+	prometheus.GaugeOpts{
+		Name: "Jobs_activos",
+		Help: "Número de jobs activos.",
+	},
+	[]string{"batchid"},
+)
 
 var peticionesTotales = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
@@ -56,6 +63,7 @@ func init() {
 	prometheus.Register(duracionHttp)
 	prometheus.Register(erroresTotales)
 	prometheus.Register(procesadosTotales)
+	prometheus.Register(activos)
 }
 
 func prometheusMiddleware(next http.Handler) http.Handler {
@@ -118,7 +126,7 @@ func main() {
 	//Prepara la llamada a ISU
 	var wg sync.WaitGroup
 	wg.Add(1)
-	servicio.New(&wg).Start(cfg.ListaBatchs, cfg.Server.Host, cfg.Server.Port, cfg.Frecuencia, procesadosTotales, erroresTotales)
+	servicio.New(&wg).Start(cfg.ListaBatchs, cfg.Server.Host, cfg.Server.Port, cfg.Frecuencia, procesadosTotales, erroresTotales, activos)
 
 	//Arranca el servidor http
 	go func() {

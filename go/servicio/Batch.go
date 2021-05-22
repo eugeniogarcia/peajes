@@ -16,6 +16,7 @@ type Batches struct {
 	Frecuencia int
 	Totales    *prometheus.GaugeVec
 	Errores    *prometheus.GaugeVec
+	Activos    *prometheus.GaugeVec
 }
 
 type Batch struct {
@@ -39,14 +40,24 @@ type Respuesta []struct {
 
 func (batches *Batches) Add(batch string, proc string, fail string, pdte string) {
 	val, existe := batches.Batches[batch]
-	if existe {
-		val.Fallados_prev = val.Fallados
-		val.Pendientes_prev = val.Pendientes
-		val.Procesados_prev = val.Procesados
-		val.Fallados, _ = strconv.Atoi(strings.TrimSpace(fail))
-		val.Pendientes, _ = strconv.Atoi(strings.TrimSpace(pdte))
-		val.Procesados, _ = strconv.Atoi(strings.TrimSpace(proc))
-		val.Acumulado_Err = val.Fallados - val.Fallados_prev
+	if !existe {
+		val = &Batch{0, 0, 0, 0, 0, 0, 0, 0, true}
+		batches.Batches[batch] = val
+	}
+	//Prepara la medida
+	fallados, _ := strconv.Atoi(strings.TrimSpace(fail))
+	pendientes, _ := strconv.Atoi(strings.TrimSpace(pdte))
+	procesados, _ := strconv.Atoi(strings.TrimSpace(proc))
+	//Guarda el valor anterior
+	val.Fallados_prev = val.Fallados
+	val.Pendientes_prev = val.Pendientes
+	val.Procesados_prev = val.Procesados
+	val.Fallados = fallados
+	val.Pendientes = pendientes
+	val.Procesados = procesados
+	// Delta entre los dos valores
+	val.Acumulado_Err = val.Fallados - val.Fallados_prev
+	if val.Pendientes_prev > 0 {
 		val.Acumulado = val.Pendientes_prev - val.Pendientes
 		if val.Acumulado == 0 {
 			val.Activo = false
@@ -55,26 +66,46 @@ func (batches *Batches) Add(batch string, proc string, fail string, pdte string)
 			val.Activo = true
 		}
 	} else {
-		batches.Batches[batch] = creaBatch(proc, fail, pdte)
+		val.Acumulado = 0
+		val.Activo = true
 	}
 
+	//Actualiza Prometheus
+	if batches.Errores != nil {
+		batches.Errores.WithLabelValues(batch).Set(float64(fallados))
+	}
+	//Actualiza Prometheus
+	if batches.Totales != nil {
+		batches.Totales.WithLabelValues(batch).Set(float64(procesados))
+	}
 }
 
-func (batches *Batches) Tasa() (float32, int, float32, int) {
-	var total, total_err int
+func (batches *Batches) Tasa() (float32, int, float32, int, int) {
+	var total_acumulado, total_err_acumulado, total, total_err, numero_jobs int
+
 	for _, val := range batches.Batches {
-		total += val.Acumulado
-		total_err += val.Acumulado_Err
+		if val.Activo {
+			numero_jobs++
+		}
+		total += val.Procesados
+		total_err += val.Fallados
+		total_acumulado += val.Acumulado
+		total_err_acumulado += val.Acumulado_Err
 	}
-	return float32(total) / float32(batches.Frecuencia) * 60, total, float32(total_err) / float32(batches.Frecuencia) * 60, total_err
-}
 
-func creaBatch(proc string, fail string, pdte string) *Batch {
+	if batches.Errores != nil {
+		batches.Errores.WithLabelValues("Total").Set(float64(total_err))
+	}
 
-	procesado, _ := strconv.Atoi(strings.TrimSpace(proc))
-	fallado, _ := strconv.Atoi(strings.TrimSpace(fail))
-	pendiente, _ := strconv.Atoi(strings.TrimSpace(pdte))
-	return &Batch{0, 0, 0, procesado, fallado, pendiente, 0, 0, true}
+	if batches.Totales != nil {
+		batches.Totales.WithLabelValues("Total").Set(float64(total))
+	}
+
+	if batches.Activos != nil {
+		batches.Activos.WithLabelValues("Total").Set(float64(numero_jobs))
+	}
+
+	return float32(total_acumulado) / float32(batches.Frecuencia) * 60, total_acumulado, float32(total_err_acumulado) / float32(batches.Frecuencia) * 60, total_err_acumulado, numero_jobs
 }
 
 func (batches *Batches) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -128,18 +159,4 @@ func (batches *Batches) Resumen(rw http.ResponseWriter, r *http.Request) {
 	}
 	rw.WriteHeader(http.StatusOK)
 	json.NewEncoder(rw).Encode(respuesta)
-}
-
-func (batches *Batches) promError(batch string, errores string) {
-	if batches.Errores != nil {
-		val, _ := strconv.Atoi(strings.TrimSpace(errores))
-		batches.Errores.WithLabelValues(batch).Add(float64(val))
-	}
-}
-
-func (batches *Batches) promTotales(batch string, totales string) {
-	if batches.Totales != nil {
-		val, _ := strconv.Atoi(strings.TrimSpace(totales))
-		batches.Totales.WithLabelValues(batch).Add(float64(val))
-	}
 }

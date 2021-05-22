@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -33,7 +32,7 @@ func New(wg *sync.WaitGroup) *Runner {
 	}
 }
 
-func (r *Runner) Start(entrada string, host string, puerto string, frecuencia int, totales *prometheus.GaugeVec, errores *prometheus.GaugeVec) {
+func (r *Runner) Start(entrada string, host string, puerto string, frecuencia int, totales *prometheus.GaugeVec, errores *prometheus.GaugeVec, activos *prometheus.GaugeVec) {
 
 	//Nos subscribimos a las interrupciones del SSOO
 	signal.Notify(r.interrupt, os.Interrupt)
@@ -42,6 +41,7 @@ func (r *Runner) Start(entrada string, host string, puerto string, frecuencia in
 	//Gauges de Prometheus
 	InformacionBatches.Totales = totales
 	InformacionBatches.Errores = errores
+	InformacionBatches.Activos = activos
 
 	//Prepara la entrada
 	valores := strings.Split(entrada, ",")
@@ -114,28 +114,30 @@ func monitorISU(uri string, entrada string) bool {
 
 }
 
+var paciencia int = 1
+
 func procesa(body []byte) bool {
 	var respuesta Respuesta
 	json.Unmarshal(body, &respuesta)
 
 	for _, medida := range respuesta {
 		InformacionBatches.Add(medida.Batch, medida.Procesados, medida.Fallados, medida.Pendientes)
-		InformacionBatches.promError(medida.Batch, medida.Fallados)
-		InformacionBatches.promTotales(medida.Batch, medida.Procesados)
 	}
-	vel, num, vel_err, num_err := InformacionBatches.Tasa()
-	val := strconv.Itoa(num_err)
-	InformacionBatches.promError("Total", val)
-	val = strconv.Itoa(num)
-	InformacionBatches.promTotales("Total", val)
+	vel, num, vel_err, num_err, activos := InformacionBatches.Tasa()
 
-	log.Println(fmt.Sprintf("Tasa: %.2f Procesados: %d Tasa de Errores: %.2f Numero de Errores: %d", vel, num, vel_err, num_err))
+	log.Println(fmt.Sprintf("Tasa: %.2f Procesados: %d Tasa de Errores: %.2f Numero de Errores: %d Jobs Activos: %d", vel, num, vel_err, num_err, activos))
 
 	//Comprueba si hay actividad
-	for _, val := range InformacionBatches.Batches {
-		if val.Activo {
-			return false
-		}
+	if activos > 0 {
+		//No ha terminado
+		paciencia = 5 * 60 / InformacionBatches.Frecuencia
+		return false
 	}
-	return true
+	//Ha terminado
+	if paciencia > 0 {
+		return true
+	}
+	//Parece que ha terminado, pero tengamos paciencia
+	paciencia -= 1
+	return false
 }

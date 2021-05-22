@@ -38,7 +38,7 @@ for (var i=0;i<num_batches;i++){
 //Probabilidad de que falle en %
 probabilidad_fallo=5;
 //Probabilidad de que cancele en por mil
-probabilidad_cancelar = 5;
+probabilidad_cancelar = 1;
 //Duracion media en segundos
 probabilidad_duracion_media = 30;
 
