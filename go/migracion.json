@@ -20,6 +20,20 @@
     "links": [],
     "panels": [
         {
+            "collapsed": false,
+            "datasource": null,
+            "gridPos": {
+                "h": 1,
+                "w": 24,
+                "x": 0,
+                "y": 0
+            },
+            "id": 15,
+            "panels": [],
+            "title": "Datos de Migración",
+            "type": "row"
+        },
+        {
             "datasource": null,
             "description": "Número total de instalaciones que han sido procesadas",
             "fieldConfig": {
@@ -36,7 +50,7 @@
                                 "value": null
                             },
                             {
-                                "color": "red",
+                                "color": "green",
                                 "value": 80
                             }
                         ]
@@ -48,7 +62,7 @@
                 "h": 5,
                 "w": 6,
                 "x": 0,
-                "y": 0
+                "y": 1
             },
             "id": 11,
             "options": {
@@ -76,7 +90,7 @@
                     "refId": "A"
                 }
             ],
-            "title": "Procesadas",
+            "title": "Instalaciones Migradas",
             "type": "stat"
         },
         {
@@ -88,15 +102,17 @@
                         "mode": "thresholds"
                     },
                     "mappings": [],
+                    "max": 40,
+                    "min": 20,
                     "thresholds": {
-                        "mode": "absolute",
+                        "mode": "percentage",
                         "steps": [
                             {
-                                "color": "green",
+                                "color": "red",
                                 "value": null
                             },
                             {
-                                "color": "red",
+                                "color": "green",
                                 "value": 80
                             }
                         ]
@@ -105,10 +121,10 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 9,
+                "h": 10,
                 "w": 7,
                 "x": 6,
-                "y": 0
+                "y": 1
             },
             "id": 2,
             "options": {
@@ -136,7 +152,7 @@
             ],
             "timeFrom": null,
             "timeShift": null,
-            "title": "Tasa de Procesamiento",
+            "title": "Instalaciones / min ",
             "type": "gauge"
         },
         {
@@ -153,10 +169,10 @@
             "fill": 2,
             "fillGradient": 2,
             "gridPos": {
-                "h": 9,
+                "h": 10,
                 "w": 11,
                 "x": 13,
-                "y": 0
+                "y": 1
             },
             "hiddenSeries": false,
             "id": 6,
@@ -198,7 +214,7 @@
             "timeFrom": null,
             "timeRegions": [],
             "timeShift": null,
-            "title": "Tasa de Procesamiento",
+            "title": "Instalaciones / min",
             "tooltip": {
                 "shared": true,
                 "sort": 0,
@@ -266,7 +282,7 @@
                 "h": 4,
                 "w": 3,
                 "x": 0,
-                "y": 5
+                "y": 6
             },
             "id": 12,
             "options": {
@@ -315,7 +331,7 @@
                             },
                             {
                                 "color": "red",
-                                "value": 80
+                                "value": 90
                             }
                         ]
                     }
@@ -326,7 +342,7 @@
                 "h": 4,
                 "w": 3,
                 "x": 3,
-                "y": 5
+                "y": 6
             },
             "id": 13,
             "options": {
@@ -354,8 +370,312 @@
                     "refId": "A"
                 }
             ],
-            "title": "Número Jobs",
+            "timeFrom": null,
+            "timeShift": null,
+            "title": "Número de Jobs",
             "type": "stat"
+        },
+        {
+            "alert": {
+                "alertRuleTags": {},
+                "conditions": [
+                    {
+                        "evaluator": {
+                            "params": [
+                                20
+                            ],
+                            "type": "lt"
+                        },
+                        "operator": {
+                            "type": "and"
+                        },
+                        "query": {
+                            "params": [
+                                "A",
+                                "5m",
+                                "now"
+                            ]
+                        },
+                        "reducer": {
+                            "params": [],
+                            "type": "avg"
+                        },
+                        "type": "query"
+                    }
+                ],
+                "executionErrorState": "alerting",
+                "for": "5m",
+                "frequency": "1m",
+                "handler": 1,
+                "message": "El Numero de Jobs está por debajo de 20",
+                "name": "Numero de Jobs",
+                "noDataState": "no_data",
+                "notifications": [
+                    {
+                        "uid": "2PuPOtqMk"
+                    }
+                ]
+            },
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": null,
+            "description": "Numero de Jobs Activos",
+            "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+            },
+            "fill": 1,
+            "fillGradient": 0,
+            "gridPos": {
+                "h": 4,
+                "w": 6,
+                "x": 0,
+                "y": 10
+            },
+            "hiddenSeries": false,
+            "id": 19,
+            "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": false,
+                "total": false,
+                "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "nullPointMode": "null",
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "7.5.6",
+            "pointradius": 2,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "Jobs_activos{batchid=\"Total\", instance=\"localhost:9000\", job=\"golang\"}",
+                    "interval": "",
+                    "legendFormat": "",
+                    "refId": "A"
+                }
+            ],
+            "thresholds": [
+                {
+                    "colorMode": "critical",
+                    "fill": true,
+                    "line": true,
+                    "op": "lt",
+                    "value": 20,
+                    "visible": true
+                }
+            ],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "Número de Jobs",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "buckets": null,
+                "mode": "time",
+                "name": null,
+                "show": false,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "$$hashKey": "object:367",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                },
+                {
+                    "$$hashKey": "object:368",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": false
+                }
+            ],
+            "yaxis": {
+                "align": false,
+                "alignLevel": null
+            }
+        },
+        {
+            "datasource": null,
+            "description": "Número de instalaciones en error por minuto",
+            "fieldConfig": {
+                "defaults": {
+                    "color": {
+                        "mode": "thresholds"
+                    },
+                    "mappings": [],
+                    "thresholds": {
+                        "mode": "percentage",
+                        "steps": [
+                            {
+                                "color": "green",
+                                "value": null
+                            },
+                            {
+                                "color": "red",
+                                "value": 80
+                            }
+                        ]
+                    }
+                },
+                "overrides": []
+            },
+            "gridPos": {
+                "h": 9,
+                "w": 7,
+                "x": 6,
+                "y": 11
+            },
+            "id": 4,
+            "options": {
+                "reduceOptions": {
+                    "calcs": [
+                        "lastNotNull"
+                    ],
+                    "fields": "",
+                    "values": false
+                },
+                "showThresholdLabels": true,
+                "showThresholdMarkers": true,
+                "text": {}
+            },
+            "pluginVersion": "7.5.6",
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "round(rate(instalaciones_error_total{batchid=\"Total\", instance=\"localhost:9000\", job=\"golang\"}[5m])*60)",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "",
+                    "refId": "A"
+                }
+            ],
+            "title": "Errores / min",
+            "type": "gauge"
+        },
+        {
+            "aliasColors": {},
+            "bars": false,
+            "dashLength": 10,
+            "dashes": false,
+            "datasource": null,
+            "description": "Numero de instalaciones procesadas en error por minuto",
+            "fieldConfig": {
+                "defaults": {},
+                "overrides": []
+            },
+            "fill": 2,
+            "fillGradient": 2,
+            "gridPos": {
+                "h": 9,
+                "w": 11,
+                "x": 13,
+                "y": 11
+            },
+            "hiddenSeries": false,
+            "id": 9,
+            "legend": {
+                "avg": false,
+                "current": false,
+                "max": false,
+                "min": false,
+                "show": false,
+                "total": false,
+                "values": false
+            },
+            "lines": true,
+            "linewidth": 1,
+            "nullPointMode": "null",
+            "options": {
+                "alertThreshold": true
+            },
+            "percentage": false,
+            "pluginVersion": "7.5.6",
+            "pointradius": 2,
+            "points": false,
+            "renderer": "flot",
+            "seriesOverrides": [],
+            "spaceLength": 10,
+            "stack": false,
+            "steppedLine": false,
+            "targets": [
+                {
+                    "exemplar": true,
+                    "expr": "rate(instalaciones_error_total{batchid=\"Total\", instance=\"localhost:9000\", job=\"golang\"}[5m])*60",
+                    "instant": false,
+                    "interval": "",
+                    "legendFormat": "",
+                    "refId": "A"
+                }
+            ],
+            "thresholds": [],
+            "timeFrom": null,
+            "timeRegions": [],
+            "timeShift": null,
+            "title": "Errores / min",
+            "tooltip": {
+                "shared": true,
+                "sort": 0,
+                "value_type": "individual"
+            },
+            "type": "graph",
+            "xaxis": {
+                "buckets": null,
+                "mode": "time",
+                "name": null,
+                "show": true,
+                "values": []
+            },
+            "yaxes": [
+                {
+                    "$$hashKey": "object:291",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                },
+                {
+                    "$$hashKey": "object:292",
+                    "format": "short",
+                    "label": null,
+                    "logBase": 1,
+                    "max": null,
+                    "min": null,
+                    "show": true
+                }
+            ],
+            "yaxis": {
+                "align": false,
+                "alignLevel": null
+            }
         },
         {
             "datasource": null,
@@ -365,7 +685,15 @@
                     "color": {
                         "mode": "palette-classic"
                     },
-                    "mappings": [],
+                    "mappings": [
+                        {
+                            "from": "",
+                            "id": 1,
+                            "text": "",
+                            "to": "",
+                            "type": 1
+                        }
+                    ],
                     "thresholds": {
                         "mode": "absolute",
                         "steps": [
@@ -383,10 +711,10 @@
                 "overrides": []
             },
             "gridPos": {
-                "h": 8,
+                "h": 6,
                 "w": 6,
                 "x": 0,
-                "y": 9
+                "y": 14
             },
             "id": 8,
             "options": {
@@ -429,162 +757,6 @@
             ],
             "transparent": true,
             "type": "piechart"
-        },
-        {
-            "datasource": null,
-            "description": "Número de instalaciones en error por minuto",
-            "fieldConfig": {
-                "defaults": {
-                    "color": {
-                        "mode": "thresholds"
-                    },
-                    "mappings": [],
-                    "thresholds": {
-                        "mode": "absolute",
-                        "steps": [
-                            {
-                                "color": "green",
-                                "value": null
-                            },
-                            {
-                                "color": "red",
-                                "value": 80
-                            }
-                        ]
-                    }
-                },
-                "overrides": []
-            },
-            "gridPos": {
-                "h": 8,
-                "w": 7,
-                "x": 6,
-                "y": 9
-            },
-            "id": 4,
-            "options": {
-                "reduceOptions": {
-                    "calcs": [
-                        "lastNotNull"
-                    ],
-                    "fields": "",
-                    "values": false
-                },
-                "showThresholdLabels": true,
-                "showThresholdMarkers": true,
-                "text": {}
-            },
-            "pluginVersion": "7.5.6",
-            "targets": [
-                {
-                    "exemplar": true,
-                    "expr": "round(rate(instalaciones_error_total{batchid=\"Total\", instance=\"localhost:9000\", job=\"golang\"}[5m])*60)",
-                    "instant": false,
-                    "interval": "",
-                    "legendFormat": "",
-                    "refId": "A"
-                }
-            ],
-            "title": "Tasa de Errores",
-            "type": "gauge"
-        },
-        {
-            "aliasColors": {},
-            "bars": false,
-            "dashLength": 10,
-            "dashes": false,
-            "datasource": null,
-            "description": "Numero de instalaciones procesadas en error por minuto",
-            "fieldConfig": {
-                "defaults": {},
-                "overrides": []
-            },
-            "fill": 2,
-            "fillGradient": 2,
-            "gridPos": {
-                "h": 8,
-                "w": 11,
-                "x": 13,
-                "y": 9
-            },
-            "hiddenSeries": false,
-            "id": 9,
-            "legend": {
-                "avg": false,
-                "current": false,
-                "max": false,
-                "min": false,
-                "show": false,
-                "total": false,
-                "values": false
-            },
-            "lines": true,
-            "linewidth": 1,
-            "nullPointMode": "null",
-            "options": {
-                "alertThreshold": true
-            },
-            "percentage": false,
-            "pluginVersion": "7.5.6",
-            "pointradius": 2,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [],
-            "spaceLength": 10,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-                {
-                    "exemplar": true,
-                    "expr": "rate(instalaciones_error_total{batchid=\"Total\", instance=\"localhost:9000\", job=\"golang\"}[5m])*60",
-                    "instant": false,
-                    "interval": "",
-                    "legendFormat": "",
-                    "refId": "A"
-                }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeRegions": [],
-            "timeShift": null,
-            "title": "Tasa de Errores",
-            "tooltip": {
-                "shared": true,
-                "sort": 0,
-                "value_type": "individual"
-            },
-            "type": "graph",
-            "xaxis": {
-                "buckets": null,
-                "mode": "time",
-                "name": null,
-                "show": true,
-                "values": []
-            },
-            "yaxes": [
-                {
-                    "$$hashKey": "object:291",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": true
-                },
-                {
-                    "$$hashKey": "object:292",
-                    "format": "short",
-                    "label": null,
-                    "logBase": 1,
-                    "max": null,
-                    "min": null,
-                    "show": true
-                }
-            ],
-            "yaxis": {
-                "align": false,
-                "alignLevel": null
-            }
         }
     ],
     "refresh": "1m",
@@ -602,5 +774,5 @@
     "timezone": "",
     "title": "Migracion",
     "uid": "CnkTlXjMk",
-    "version": 13
+    "version": 19
 }
