@@ -119,6 +119,7 @@ func main() {
 	router.Path("/metrics").Handler(promhttp.Handler())
 	router.Path("/batches").Handler(&servicio.InformacionBatches)
 	router.HandleFunc("/resumen", servicio.InformacionBatches.Resumen)
+	router.HandleFunc("/lite", servicio.InformacionBatches.Lite)
 
 	// Indica desde donde poder servir recursos estáticos
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static/")))
@@ -126,12 +127,12 @@ func main() {
 	//Prepara la llamada a ISU
 	var wg sync.WaitGroup
 	wg.Add(1)
-	servicio.New(&wg).Start(cfg.ListaBatchs, cfg.Server.Host, cfg.Server.Port, cfg.Frecuencia, procesadosTotales, erroresTotales, activos)
+	servicio.New(&wg).Start(cfg.ListaBatchs, cfg.Server.Host, cfg.Server.Port, cfg.Frecuencia, cfg.ListaCadenas, procesadosTotales, erroresTotales, activos)
 
 	//Arranca el servidor http
 	go func() {
-		fmt.Println("Sirviendo peticiones en el puerto 9000")
-		err := http.ListenAndServe(":9000", router)
+		fmt.Printf("Sirviendo peticiones en el puerto %d", cfg.Puerto)
+		err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Puerto), router)
 		log.Fatal(err)
 	}()
 

@@ -1,3 +1,13 @@
+# Configure Prometheus
+
+Con `prometheus.yaml` configuramos prometheus para que haga el scraping de metricas.
+
+# Configurar grafana
+
+- Configurar la datasource de Prometheus
+- Incluir el dashboard
+- Configurar grafana. Incluimos la configuración de la sección _[smtp]_ del archivo _defaults.ini_
+
 # Prometheus
 
 We declare the metrics:
@@ -34,7 +44,7 @@ batches.Errores.WithLabelValues("Total").Set(float64(total_err))
 
 There are other methods available, such as _add_.
 
-## QUeries
+## Queries
 
 A couple of examples of prometheus queries:
 
