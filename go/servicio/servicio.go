@@ -116,7 +116,9 @@ func monitorISU(uri string, entrada string) bool {
 
 }
 
-var paciencia int = 1
+const paciencia_total = 480
+
+var paciencia int = paciencia_total
 
 func procesa(body []byte) bool {
 	var respuesta Respuesta
@@ -134,7 +136,7 @@ func procesa(body []byte) bool {
 	//Comprueba si hay actividad
 	if activos > 0 {
 		//No ha terminado
-		paciencia = 5 * 60 / InformacionBatches.Frecuencia
+		paciencia = paciencia_total * 60 / InformacionBatches.Frecuencia
 		return false
 	}
 	//Ha terminado
