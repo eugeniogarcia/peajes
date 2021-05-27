@@ -32,12 +32,13 @@ func New(wg *sync.WaitGroup) *Runner {
 	}
 }
 
-func (r *Runner) Start(entrada string, host string, puerto string, frecuencia int, totales *prometheus.GaugeVec, errores *prometheus.GaugeVec, activos *prometheus.GaugeVec) {
+func (r *Runner) Start(entrada string, host string, puerto string, frecuencia int, cadena InformacionCadenas, totales *prometheus.GaugeVec, errores *prometheus.GaugeVec, activos *prometheus.GaugeVec) {
 
 	//Nos subscribimos a las interrupciones del SSOO
 	signal.Notify(r.interrupt, os.Interrupt)
 	//Guardamos la frecuencia
 	InformacionBatches.Frecuencia = frecuencia
+	InformacionBatches.Cadena = cadena
 	//Gauges de Prometheus
 	InformacionBatches.Totales = totales
 	InformacionBatches.Errores = errores
@@ -88,6 +89,7 @@ func (r *Runner) run(entrada string, uri string, frecuencia int) {
 }
 
 func monitorISU(uri string, entrada string) bool {
+	//fmt.Println(entrada)
 	var jsonStr = []byte(entrada)
 	req, err := http.NewRequest(http.MethodGet, uri, bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
@@ -118,6 +120,8 @@ var paciencia int = 1
 
 func procesa(body []byte) bool {
 	var respuesta Respuesta
+	//valor := string(body)
+	//fmt.Println(valor)
 	json.Unmarshal(body, &respuesta)
 
 	for _, medida := range respuesta {

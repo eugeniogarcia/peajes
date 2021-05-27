@@ -55,20 +55,24 @@ func cargar(conf *Config) {
 		if strings.ToLower(conf.ListaCadena) == "todas" {
 			for i := 1; i <= conf.Cadena; i++ {
 				conf.ListaCadenas[i] = make([]string, 5)
-				for j := 0; j < 5; j++ {
+				for j := 0; j < 4; j++ {
 					resultado += strconv.Itoa(i+j*conf.Cadena) + ","
 					conf.ListaCadenas[i][j] = strconv.Itoa(i + j*conf.Cadena)
 				}
+				resultado += strconv.Itoa(i + 4*conf.Cadena)
+				conf.ListaCadenas[i][4] = strconv.Itoa(i + 4*conf.Cadena)
 			}
 		} else {
 			valores := strings.Split(conf.ListaCadena, ",")
 			for _, val := range valores {
 				cad, _ := strconv.Atoi(val)
 				conf.ListaCadenas[cad] = make([]string, 5)
-				for j := 0; j < 5; j++ {
+				for j := 0; j < 4; j++ {
 					resultado += strconv.Itoa(cad+j*conf.Cadena) + ","
 					conf.ListaCadenas[cad][j] = strconv.Itoa(cad + j*conf.Cadena)
 				}
+				resultado += strconv.Itoa(cad + 4*conf.Cadena)
+				conf.ListaCadenas[cad][4] = strconv.Itoa(cad + 4*conf.Cadena)
 			}
 		}
 		conf.ListaBatchs = resultado
