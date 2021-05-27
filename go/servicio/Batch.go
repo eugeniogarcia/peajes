@@ -14,11 +14,13 @@ import (
 type Batches struct {
 	Batches    map[string]*Batch
 	Frecuencia int
+	Cadena     InformacionCadenas
 	Totales    *prometheus.GaugeVec
 	Errores    *prometheus.GaugeVec
 	Activos    *prometheus.GaugeVec
 }
 
+type InformacionCadenas map[int][]string
 type Batch struct {
 	Procesados_prev int
 	Fallados_prev   int
@@ -157,6 +159,60 @@ func (batches *Batches) Resumen(rw http.ResponseWriter, r *http.Request) {
 			})
 		}
 	}
+	rw.WriteHeader(http.StatusOK)
+	json.NewEncoder(rw).Encode(respuesta)
+}
+
+type LiteBatches struct {
+	BatchesNoActivo  []int
+	CadenasNoActivas []int
+	CadenasMitad     []int
+}
+
+func (batches *Batches) Lite(rw http.ResponseWriter, r *http.Request) {
+	respuesta := LiteBatches{
+		BatchesNoActivo:  make([]int, 0, 0),
+		CadenasNoActivas: make([]int, 0, 0),
+		CadenasMitad:     make([]int, 0, 0)}
+
+	for batch, val := range batches.Batches {
+		switch val.Activo {
+		case false:
+			i, _ := strconv.Atoi(batch)
+			respuesta.BatchesNoActivo = append(respuesta.BatchesNoActivo, i)
+		}
+	}
+
+	if batches.Cadena != nil {
+		for cadena_batch, lista_cadenas := range batches.Cadena {
+			//Cadena no esta activa
+			cadena_activa := false
+			cadena_activa_amitad := false
+			for pos, val := range lista_cadenas {
+				elbatch := batches.Batches[val]
+				if elbatch == nil {
+					fmt.Println("No encontro el batchid en la respuesta")
+					continue
+				}
+				if elbatch.Activo {
+					//Cadena esta activa
+					cadena_activa = true
+					if pos > 1 {
+						cadena_activa_amitad = true
+					}
+					break
+				}
+			}
+			if !cadena_activa {
+				respuesta.CadenasNoActivas = append(respuesta.CadenasNoActivas, cadena_batch)
+			} else {
+				if cadena_activa_amitad {
+					respuesta.CadenasMitad = append(respuesta.CadenasMitad, cadena_batch)
+				}
+			}
+		}
+	}
+
 	rw.WriteHeader(http.StatusOK)
 	json.NewEncoder(rw).Encode(respuesta)
 }

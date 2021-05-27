@@ -4,7 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 
+	"github.com/eugeniogarcia/peajes/servicio"
 	"gopkg.in/yaml.v2"
 )
 
@@ -14,9 +17,16 @@ type Config struct {
 		Host string `yaml:"host"`
 	} `yaml:"isu"`
 
+	Puerto int `yaml:"escucha"`
+
 	Frecuencia int `yaml:"frecuencia"`
 
 	ListaBatchs string `yaml:"lista"`
+	ListaCadena string `yaml:"cadenas"`
+
+	Cadena int `yaml:"cadena"`
+
+	ListaCadenas servicio.InformacionCadenas
 }
 
 func cargar(conf *Config) {
@@ -31,6 +41,42 @@ func cargar(conf *Config) {
 	if err != nil {
 		processError(fmt.Errorf("no se ha especificado la lista de batchs: %s", err))
 	}
+	if conf.ListaCadena == "" {
+		if conf.ListaBatchs == "" {
+			processError(errors.New("no se ha especificado la lista de batchs"))
+		}
+	} else {
+		conf.ListaCadenas = make(map[int][]string)
+
+		resultado := ""
+		if conf.Cadena == 0 {
+			conf.Cadena = 120
+		}
+		if strings.ToLower(conf.ListaCadena) == "todas" {
+			for i := 1; i <= conf.Cadena; i++ {
+				conf.ListaCadenas[i] = make([]string, 5)
+				for j := 0; j < 4; j++ {
+					resultado += strconv.Itoa(i+j*conf.Cadena) + ","
+					conf.ListaCadenas[i][j] = strconv.Itoa(i + j*conf.Cadena)
+				}
+				resultado += strconv.Itoa(i + 4*conf.Cadena)
+				conf.ListaCadenas[i][4] = strconv.Itoa(i + 4*conf.Cadena)
+			}
+		} else {
+			valores := strings.Split(conf.ListaCadena, ",")
+			for _, val := range valores {
+				cad, _ := strconv.Atoi(val)
+				conf.ListaCadenas[cad] = make([]string, 5)
+				for j := 0; j < 4; j++ {
+					resultado += strconv.Itoa(cad+j*conf.Cadena) + ","
+					conf.ListaCadenas[cad][j] = strconv.Itoa(cad + j*conf.Cadena)
+				}
+				resultado += strconv.Itoa(cad + 4*conf.Cadena)
+				conf.ListaCadenas[cad][4] = strconv.Itoa(cad + 4*conf.Cadena)
+			}
+		}
+		conf.ListaBatchs = resultado
+	}
 	if conf.ListaBatchs == "" {
 		processError(errors.New("no se ha especificado la lista de batchs"))
 	}
@@ -42,6 +88,9 @@ func cargar(conf *Config) {
 	}
 	if conf.Frecuencia == 0 {
 		conf.Frecuencia = 60
+	}
+	if conf.Puerto == 0 {
+		conf.Puerto = 9000
 	}
 }
 
