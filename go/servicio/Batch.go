@@ -164,21 +164,22 @@ func (batches *Batches) Resumen(rw http.ResponseWriter, r *http.Request) {
 }
 
 type LiteBatches struct {
-	BatchesNoActivo  []string
-	CadenasNoActivas []string
-	CadenasMitad     []string
+	BatchesNoActivo  []int
+	CadenasNoActivas []int
+	CadenasMitad     []int
 }
 
 func (batches *Batches) Lite(rw http.ResponseWriter, r *http.Request) {
 	respuesta := LiteBatches{
-		BatchesNoActivo:  make([]string, 0, 0),
-		CadenasNoActivas: make([]string, 0, 0),
-		CadenasMitad:     make([]string, 0, 0)}
+		BatchesNoActivo:  make([]int, 0, 0),
+		CadenasNoActivas: make([]int, 0, 0),
+		CadenasMitad:     make([]int, 0, 0)}
 
 	for batch, val := range batches.Batches {
 		switch val.Activo {
 		case false:
-			respuesta.BatchesNoActivo = append(respuesta.BatchesNoActivo, batch)
+			i, _ := strconv.Atoi(batch)
+			respuesta.BatchesNoActivo = append(respuesta.BatchesNoActivo, i)
 		}
 	}
 
@@ -203,10 +204,10 @@ func (batches *Batches) Lite(rw http.ResponseWriter, r *http.Request) {
 				}
 			}
 			if !cadena_activa {
-				respuesta.CadenasNoActivas = append(respuesta.CadenasNoActivas, strconv.Itoa(cadena_batch))
+				respuesta.CadenasNoActivas = append(respuesta.CadenasNoActivas, cadena_batch)
 			} else {
 				if cadena_activa_amitad {
-					respuesta.CadenasMitad = append(respuesta.CadenasMitad, strconv.Itoa(cadena_batch))
+					respuesta.CadenasMitad = append(respuesta.CadenasMitad, cadena_batch)
 				}
 			}
 		}
