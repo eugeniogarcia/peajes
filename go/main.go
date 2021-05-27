@@ -132,6 +132,7 @@ func main() {
 	//Arranca el servidor http
 	go func() {
 		fmt.Printf("Sirviendo peticiones en el puerto %d", cfg.Puerto)
+		fmt.Println("")
 		err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Puerto), router)
 		log.Fatal(err)
 	}()

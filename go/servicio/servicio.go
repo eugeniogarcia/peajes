@@ -131,7 +131,12 @@ func procesa(body []byte) bool {
 	}
 	vel, num, vel_err, num_err, activos := InformacionBatches.Tasa()
 
-	log.Println(fmt.Sprintf("Tasa: %.2f Procesados: %d Tasa de Errores: %.2f Numero de Errores: %d Jobs Activos: %d", vel, num, vel_err, num_err, activos))
+	if len(InformacionBatches.preparaRespuestaLite().CadenasNoActivas) > 0 {
+		log.Println("Cadenas no activas")
+		log.Println(InformacionBatches.preparaRespuestaLite().CadenasNoActivas)
+	}
+
+	log.Println(fmt.Sprintf("Tasa: %.2f Procesados: %d Tasa Err: %.2f Num Err: %d Jobs Activos: %d", vel, num, vel_err, num_err, activos))
 
 	//Comprueba si hay actividad
 	if activos > 0 {

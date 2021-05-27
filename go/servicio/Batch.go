@@ -3,7 +3,6 @@ package servicio
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -63,7 +62,7 @@ func (batches *Batches) Add(batch string, proc string, fail string, pdte string)
 		val.Acumulado = val.Pendientes_prev - val.Pendientes
 		if val.Acumulado == 0 {
 			val.Activo = false
-			log.Println(fmt.Sprintf("El batch %s no tiene actividad", batch))
+			//log.Println(fmt.Sprintf("El batch %s no tiene actividad", batch))
 		} else {
 			val.Activo = true
 		}
@@ -169,19 +168,11 @@ type LiteBatches struct {
 	CadenasMitad     []int
 }
 
-func (batches *Batches) Lite(rw http.ResponseWriter, r *http.Request) {
+func (batches *Batches) preparaRespuestaLite() LiteBatches {
 	respuesta := LiteBatches{
 		BatchesNoActivo:  make([]int, 0, 0),
 		CadenasNoActivas: make([]int, 0, 0),
 		CadenasMitad:     make([]int, 0, 0)}
-
-	for batch, val := range batches.Batches {
-		switch val.Activo {
-		case false:
-			i, _ := strconv.Atoi(batch)
-			respuesta.BatchesNoActivo = append(respuesta.BatchesNoActivo, i)
-		}
-	}
 
 	if batches.Cadena != nil {
 		for cadena_batch, lista_cadenas := range batches.Cadena {
@@ -189,6 +180,9 @@ func (batches *Batches) Lite(rw http.ResponseWriter, r *http.Request) {
 			cadena_activa := false
 			cadena_activa_amitad := false
 			for pos, val := range lista_cadenas {
+				if val == "" {
+					continue
+				}
 				elbatch := batches.Batches[val]
 				if elbatch == nil {
 					fmt.Println("No encontro el batchid en la respuesta")
@@ -211,7 +205,21 @@ func (batches *Batches) Lite(rw http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
+	} else {
+		for batch, val := range batches.Batches {
+			switch val.Activo {
+			case false:
+				i, _ := strconv.Atoi(batch)
+				respuesta.BatchesNoActivo = append(respuesta.BatchesNoActivo, i)
+			}
+		}
 	}
+
+	return respuesta
+}
+
+func (batches *Batches) Lite(rw http.ResponseWriter, r *http.Request) {
+	respuesta := batches.preparaRespuestaLite()
 
 	rw.WriteHeader(http.StatusOK)
 	json.NewEncoder(rw).Encode(respuesta)
