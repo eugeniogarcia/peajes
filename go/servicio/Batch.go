@@ -13,6 +13,7 @@ import (
 type Batches struct {
 	Batches    map[string]*Batch
 	Frecuencia int
+	Paciencia  int
 	Cadena     InformacionCadenas
 	Totales    *prometheus.GaugeVec
 	Errores    *prometheus.GaugeVec
@@ -30,6 +31,7 @@ type Batch struct {
 	Acumulado       int
 	Acumulado_Err   int
 	Activo          bool
+	Paciencia       int
 }
 
 type Respuesta []struct {
@@ -42,7 +44,7 @@ type Respuesta []struct {
 func (batches *Batches) Add(batch string, proc string, fail string, pdte string) {
 	val, existe := batches.Batches[batch]
 	if !existe {
-		val = &Batch{0, 0, 0, 0, 0, 0, 0, 0, true}
+		val = &Batch{0, 0, 0, 0, 0, 0, 0, 0, true, batches.Paciencia}
 		batches.Batches[batch] = val
 	}
 	//Prepara la medida
@@ -61,14 +63,31 @@ func (batches *Batches) Add(batch string, proc string, fail string, pdte string)
 	if val.Pendientes_prev > 0 {
 		val.Acumulado = val.Pendientes_prev - val.Pendientes
 		if val.Acumulado == 0 {
-			val.Activo = false
+			val.Paciencia--
+			if val.Paciencia > 0 {
+				val.Activo = true
+			} else {
+				val.Activo = false
+			}
 			//log.Println(fmt.Sprintf("El batch %s no tiene actividad", batch))
 		} else {
+			val.Paciencia = batches.Paciencia
 			val.Activo = true
 		}
 	} else {
-		val.Acumulado = 0
-		val.Activo = true
+		if !existe {
+			val.Acumulado = 0
+			val.Paciencia = batches.Paciencia
+			val.Activo = true
+		} else {
+			val.Acumulado = 0
+			val.Paciencia--
+			if val.Paciencia > 0 {
+				val.Activo = true
+			} else {
+				val.Activo = false
+			}
+		}
 	}
 
 	//Actualiza Prometheus

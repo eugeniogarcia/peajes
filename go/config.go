@@ -26,6 +26,8 @@ type Config struct {
 
 	Cadena int `yaml:"cadena"`
 
+	Paciencia int `yaml:"paciencia"`
+
 	ListaCadenas servicio.InformacionCadenas
 }
 
@@ -94,6 +96,9 @@ func cargar(conf *Config) {
 	}
 	if conf.Frecuencia == 0 {
 		conf.Frecuencia = 60
+	}
+	if conf.Paciencia == 0 {
+		conf.Paciencia = 4
 	}
 	if conf.Puerto == 0 {
 		conf.Puerto = 9000

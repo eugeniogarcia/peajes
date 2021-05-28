@@ -127,7 +127,7 @@ func main() {
 	//Prepara la llamada a ISU
 	var wg sync.WaitGroup
 	wg.Add(1)
-	servicio.New(&wg).Start(cfg.ListaBatchs, cfg.Server.Host, cfg.Server.Port, cfg.Frecuencia, cfg.ListaCadenas, procesadosTotales, erroresTotales, activos)
+	servicio.New(&wg).Start(cfg.ListaBatchs, cfg.Server.Host, cfg.Server.Port, cfg.Frecuencia, cfg.Paciencia, cfg.ListaCadenas, procesadosTotales, erroresTotales, activos)
 
 	//Arranca el servidor http
 	go func() {

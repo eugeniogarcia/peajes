@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -32,13 +33,15 @@ func New(wg *sync.WaitGroup) *Runner {
 	}
 }
 
-func (r *Runner) Start(entrada string, host string, puerto string, frecuencia int, cadena InformacionCadenas, totales *prometheus.GaugeVec, errores *prometheus.GaugeVec, activos *prometheus.GaugeVec) {
+func (r *Runner) Start(entrada string, host string, puerto string, frecuencia int, paciencia int, cadena InformacionCadenas, totales *prometheus.GaugeVec, errores *prometheus.GaugeVec, activos *prometheus.GaugeVec) {
 
 	//Nos subscribimos a las interrupciones del SSOO
 	signal.Notify(r.interrupt, os.Interrupt)
 	//Guardamos la frecuencia
 	InformacionBatches.Frecuencia = frecuencia
+	InformacionBatches.Paciencia = paciencia
 	InformacionBatches.Cadena = cadena
+
 	//Gauges de Prometheus
 	InformacionBatches.Totales = totales
 	InformacionBatches.Errores = errores
@@ -133,7 +136,9 @@ func procesa(body []byte) bool {
 
 	if len(InformacionBatches.preparaRespuestaLite().CadenasNoActivas) > 0 {
 		log.Println("Cadenas no activas")
-		log.Println(InformacionBatches.preparaRespuestaLite().CadenasNoActivas)
+		valores := InformacionBatches.preparaRespuestaLite().CadenasNoActivas[:]
+		sort.Ints(valores)
+		log.Println(valores)
 	}
 
 	log.Println(fmt.Sprintf("Tasa: %.2f Procesados: %d Tasa Err: %.2f Num Err: %d Jobs Activos: %d", vel, num, vel_err, num_err, activos))
