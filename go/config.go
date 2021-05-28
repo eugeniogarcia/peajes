@@ -29,6 +29,8 @@ type Config struct {
 	ListaCadenas servicio.InformacionCadenas
 }
 
+const limiteJobs = 500
+
 func cargar(conf *Config) {
 	f, err := os.Open("config.yml")
 	if err != nil {
@@ -56,7 +58,7 @@ func cargar(conf *Config) {
 			for i := 1; i <= conf.Cadena; i++ {
 				conf.ListaCadenas[i] = make([]string, 5)
 				for j := 0; j < 5; j++ {
-					if i+j*conf.Cadena > 500 {
+					if i+j*conf.Cadena > limiteJobs {
 						continue
 					} else {
 						resultado += strconv.Itoa(i+j*conf.Cadena) + ","
@@ -70,7 +72,7 @@ func cargar(conf *Config) {
 				cad, _ := strconv.Atoi(val)
 				conf.ListaCadenas[cad] = make([]string, 5)
 				for j := 0; j < 5; j++ {
-					if cad+j*conf.Cadena > 500 {
+					if cad+j*conf.Cadena > limiteJobs {
 						continue
 					} else {
 						resultado += strconv.Itoa(cad+j*conf.Cadena) + ","
