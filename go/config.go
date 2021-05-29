@@ -21,8 +21,8 @@ type Config struct {
 
 	Frecuencia int `yaml:"frecuencia"`
 
-	ListaBatchs string `yaml:"lista"`
-	ListaCadena string `yaml:"cadenas"`
+	ListaBatchs []string `yaml:"lista"`
+	ListaCadena []string `yaml:"cadenas"`
 
 	Cadena int `yaml:"cadena"`
 
@@ -31,7 +31,7 @@ type Config struct {
 	ListaCadenas servicio.InformacionCadenas
 }
 
-const limiteJobs = 500
+const limiteJobs = 506
 
 func cargar(conf *Config) {
 	f, err := os.Open("config.yml")
@@ -45,47 +45,44 @@ func cargar(conf *Config) {
 	if err != nil {
 		processError(fmt.Errorf("no se ha especificado la lista de batchs: %s", err))
 	}
-	if conf.ListaCadena == "" {
-		if conf.ListaBatchs == "" {
+	if conf.ListaCadena == nil {
+		if conf.ListaBatchs == nil {
 			processError(errors.New("no se ha especificado la lista de batchs"))
 		}
 	} else {
 		conf.ListaCadenas = make(map[int][]string)
 
-		resultado := ""
 		if conf.Cadena == 0 {
 			conf.Cadena = 120
 		}
-		if strings.ToLower(conf.ListaCadena) == "todas" {
+		if strings.ToLower(conf.ListaCadena[0]) == "todas" {
 			for i := 1; i <= conf.Cadena; i++ {
 				conf.ListaCadenas[i] = make([]string, 5)
 				for j := 0; j < 5; j++ {
 					if i+j*conf.Cadena > limiteJobs {
 						continue
 					} else {
-						resultado += strconv.Itoa(i+j*conf.Cadena) + ","
+						conf.ListaBatchs = append(conf.ListaBatchs, strconv.Itoa(i+j*conf.Cadena))
 						conf.ListaCadenas[i][j] = strconv.Itoa(i + j*conf.Cadena)
 					}
 				}
 			}
 		} else {
-			valores := strings.Split(conf.ListaCadena, ",")
-			for _, val := range valores {
+			for _, val := range conf.ListaCadena {
 				cad, _ := strconv.Atoi(val)
 				conf.ListaCadenas[cad] = make([]string, 5)
 				for j := 0; j < 5; j++ {
 					if cad+j*conf.Cadena > limiteJobs {
 						continue
 					} else {
-						resultado += strconv.Itoa(cad+j*conf.Cadena) + ","
+						conf.ListaBatchs = append(conf.ListaBatchs, strconv.Itoa(cad+j*conf.Cadena))
 						conf.ListaCadenas[cad][j] = strconv.Itoa(cad + j*conf.Cadena)
 					}
 				}
 			}
 		}
-		conf.ListaBatchs = resultado[:len(resultado)-1]
 	}
-	if conf.ListaBatchs == "" {
+	if conf.ListaBatchs == nil {
 		processError(errors.New("no se ha especificado la lista de batchs"))
 	}
 	if conf.Server.Host == "" {

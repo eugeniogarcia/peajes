@@ -2,8 +2,8 @@ package servicio
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -43,51 +43,57 @@ type Respuesta []struct {
 
 func (batches *Batches) Add(batch string, proc string, fail string, pdte string) {
 	val, existe := batches.Batches[batch]
-	if !existe {
-		val = &Batch{0, 0, 0, 0, 0, 0, 0, 0, true, batches.Paciencia}
-		batches.Batches[batch] = val
-	}
 	//Prepara la medida
 	fallados, _ := strconv.Atoi(strings.TrimSpace(fail))
 	pendientes, _ := strconv.Atoi(strings.TrimSpace(pdte))
 	procesados, _ := strconv.Atoi(strings.TrimSpace(proc))
-	//Guarda el valor anterior
-	val.Fallados_prev = val.Fallados
-	val.Pendientes_prev = val.Pendientes
-	val.Procesados_prev = val.Procesados
-	val.Fallados = fallados
-	val.Pendientes = pendientes
-	val.Procesados = procesados
-	// Delta entre los dos valores
-	val.Acumulado_Err = val.Fallados - val.Fallados_prev
-	if val.Pendientes_prev > 0 {
-		val.Acumulado = val.Pendientes_prev - val.Pendientes
-		if val.Acumulado == 0 {
-			val.Paciencia--
-			if val.Paciencia > 0 {
-				val.Activo = true
-			} else {
-				val.Activo = false
-			}
-			//log.Println(fmt.Sprintf("El batch %s no tiene actividad", batch))
-		} else {
-			val.Paciencia = batches.Paciencia
-			val.Activo = true
-		}
+
+	if !existe {
+		val = &Batch{0, 0, 0, 0, 0, 0, 0, 0, true, batches.Paciencia}
+		batches.Batches[batch] = val
+		val.Fallados_prev = fallados
+		val.Fallados = fallados
+		val.Pendientes_prev = pendientes
+		val.Pendientes = pendientes
+		val.Procesados_prev = procesados
+		val.Activo = true
+		val.Procesados = procesados
+		val.Acumulado_Err = 0
 	} else {
-		if !existe {
-			val.Acumulado = 0
-			val.Paciencia = batches.Paciencia
-			val.Activo = true
+		//Guarda el valor anterior
+		val.Fallados_prev = val.Fallados
+		val.Pendientes_prev = val.Pendientes
+		val.Procesados_prev = val.Procesados
+		if fallados > val.Fallados {
+			val.Fallados = fallados
+		}
+		if val.Pendientes > pendientes {
+			val.Pendientes = pendientes
+		}
+		if procesados > val.Procesados {
+			val.Procesados = procesados
+		}
+		// Delta entre los dos valores
+		val.Acumulado_Err = val.Fallados - val.Fallados_prev
+		if val.Pendientes_prev > 0 {
+			val.Acumulado = val.Pendientes_prev - val.Pendientes
+			if val.Acumulado == 0 {
+				val.Paciencia--
+				if val.Paciencia > 0 {
+					val.Activo = true
+				} else {
+					val.Activo = false
+				}
+				//log.Println(fmt.Sprintf("El batch %s no tiene actividad", batch))
+			} else {
+				val.Paciencia = batches.Paciencia
+				val.Activo = true
+			}
 		} else {
 			val.Acumulado = 0
-			val.Paciencia--
-			if val.Paciencia > 0 {
-				val.Activo = true
-			} else {
-				val.Activo = false
-			}
+			val.Activo = false
 		}
+
 	}
 
 	//Actualiza Prometheus
@@ -111,6 +117,7 @@ func (batches *Batches) Tasa() (float32, int, float32, int, int) {
 		total_err += val.Fallados
 		total_acumulado += val.Acumulado
 		total_err_acumulado += val.Acumulado_Err
+
 	}
 
 	if batches.Errores != nil {
@@ -125,7 +132,7 @@ func (batches *Batches) Tasa() (float32, int, float32, int, int) {
 		batches.Activos.WithLabelValues("Total").Set(float64(numero_jobs))
 	}
 
-	return float32(total_acumulado) / float32(batches.Frecuencia) * 60, total_acumulado, float32(total_err_acumulado) / float32(batches.Frecuencia) * 60, total_err_acumulado, numero_jobs
+	return (float32(total_acumulado) / float32(batches.Frecuencia)) * 60, total_acumulado, (float32(total_err_acumulado) / float32(batches.Frecuencia)) * 60, total_err_acumulado, numero_jobs
 }
 
 func (batches *Batches) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
@@ -184,45 +191,48 @@ func (batches *Batches) Resumen(rw http.ResponseWriter, r *http.Request) {
 type LiteBatches struct {
 	BatchesNoActivo  []int
 	CadenasNoActivas []int
-	CadenasMitad     []int
+	CadenasAlFinal   []int
 }
+
+//Numero eslabones en la cadena
+const numero_eslabones = 5
 
 func (batches *Batches) preparaRespuestaLite() LiteBatches {
 	respuesta := LiteBatches{
 		BatchesNoActivo:  make([]int, 0, 0),
 		CadenasNoActivas: make([]int, 0, 0),
-		CadenasMitad:     make([]int, 0, 0)}
+		CadenasAlFinal:   make([]int, 0, 0)}
 
 	if batches.Cadena != nil {
 		for cadena_batch, lista_cadenas := range batches.Cadena {
 			//Cadena no esta activa
 			cadena_activa := false
-			cadena_activa_amitad := false
+			//Cadena esta en el nodo final
+			cadena_al_final := false
 			for pos, val := range lista_cadenas {
 				if val == "" {
 					continue
 				}
 				elbatch := batches.Batches[val]
+				if (pos + 1) == numero_eslabones {
+					cadena_al_final = true
+				}
 				if elbatch == nil {
-					fmt.Println("No encontro el batchid en la respuesta")
 					continue
 				}
 				if elbatch.Activo {
 					//Cadena esta activa
 					cadena_activa = true
-					if pos > 1 {
-						cadena_activa_amitad = true
-					}
 					break
 				}
 			}
 			if !cadena_activa {
 				respuesta.CadenasNoActivas = append(respuesta.CadenasNoActivas, cadena_batch)
-			} else {
-				if cadena_activa_amitad {
-					respuesta.CadenasMitad = append(respuesta.CadenasMitad, cadena_batch)
-				}
 			}
+			if cadena_al_final {
+				respuesta.CadenasAlFinal = append(respuesta.CadenasAlFinal, cadena_batch)
+			}
+
 		}
 	} else {
 		for batch, val := range batches.Batches {
@@ -233,6 +243,10 @@ func (batches *Batches) preparaRespuestaLite() LiteBatches {
 			}
 		}
 	}
+
+	sort.Ints(respuesta.BatchesNoActivo)
+	sort.Ints(respuesta.CadenasNoActivas)
+	sort.Ints(respuesta.CadenasAlFinal)
 
 	return respuesta
 }

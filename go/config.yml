@@ -3,9 +3,15 @@ escucha: 9001
 isu:
   host: "10.92.72.132"
   port: 8000
-frecuencia: 60
-#lista: 1,2,3,4,5,6
-cadenas: Todas
-#cadenas: 1,2
-#cadena: 120
+frecuencia: 30
+#lista:
+#  - 1
+#  - 2
+#  - 3
+cadenas: 
+- Todas
+#cadenas: 
+# - 1
+# - 2
+# - 5
 paciencia: 5

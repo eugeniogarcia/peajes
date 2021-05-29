@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -33,7 +32,7 @@ func New(wg *sync.WaitGroup) *Runner {
 	}
 }
 
-func (r *Runner) Start(entrada string, host string, puerto string, frecuencia int, paciencia int, cadena InformacionCadenas, totales *prometheus.GaugeVec, errores *prometheus.GaugeVec, activos *prometheus.GaugeVec) {
+func (r *Runner) Start(valores []string, host string, puerto string, frecuencia int, paciencia int, cadena InformacionCadenas, totales *prometheus.GaugeVec, errores *prometheus.GaugeVec, activos *prometheus.GaugeVec) {
 
 	//Nos subscribimos a las interrupciones del SSOO
 	signal.Notify(r.interrupt, os.Interrupt)
@@ -48,7 +47,6 @@ func (r *Runner) Start(entrada string, host string, puerto string, frecuencia in
 	InformacionBatches.Activos = activos
 
 	//Prepara la entrada
-	valores := strings.Split(entrada, ",")
 	var input = make([]string, len(valores))
 	for i, val := range valores {
 		input[i] = fmt.Sprintf("\"batchid\":%s", val)
@@ -134,11 +132,14 @@ func procesa(body []byte) bool {
 	}
 	vel, num, vel_err, num_err, activos := InformacionBatches.Tasa()
 
+	if len(InformacionBatches.preparaRespuestaLite().CadenasAlFinal) > 0 {
+		log.Println("Cadenas en el punto final")
+		log.Println(InformacionBatches.preparaRespuestaLite().CadenasAlFinal)
+	}
+
 	if len(InformacionBatches.preparaRespuestaLite().CadenasNoActivas) > 0 {
 		log.Println("Cadenas no activas")
-		valores := InformacionBatches.preparaRespuestaLite().CadenasNoActivas[:]
-		sort.Ints(valores)
-		log.Println(valores)
+		log.Println(InformacionBatches.preparaRespuestaLite().CadenasNoActivas)
 	}
 
 	log.Println(fmt.Sprintf("Tasa: %.2f Procesados: %d Tasa Err: %.2f Num Err: %d Jobs Activos: %d", vel, num, vel_err, num_err, activos))
