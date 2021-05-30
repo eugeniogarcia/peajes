@@ -19,8 +19,8 @@ type Config struct {
 
 	Puerto int `yaml:"escucha"`
 
-	Frecuencia int `yaml:"frecuencia"`
-
+	Frecuencia  int      `yaml:"frecuencia"`
+	MaxJobs     int      `yaml:"max_jobs"`
 	ListaBatchs []string `yaml:"lista"`
 	ListaCadena []string `yaml:"cadenas"`
 
@@ -39,6 +39,10 @@ func cargar(conf *Config) {
 		processError(err)
 	}
 	defer f.Close()
+
+	if conf.MaxJobs == 0 {
+		conf.MaxJobs = limiteJobs
+	}
 
 	decoder := yaml.NewDecoder(f)
 	err = decoder.Decode(conf)
@@ -59,7 +63,7 @@ func cargar(conf *Config) {
 			for i := 1; i <= conf.Cadena; i++ {
 				conf.ListaCadenas[i] = make([]string, 5)
 				for j := 0; j < 5; j++ {
-					if i+j*conf.Cadena > limiteJobs {
+					if i+j*conf.Cadena > conf.MaxJobs {
 						continue
 					} else {
 						conf.ListaBatchs = append(conf.ListaBatchs, strconv.Itoa(i+j*conf.Cadena))
@@ -72,7 +76,7 @@ func cargar(conf *Config) {
 				cad, _ := strconv.Atoi(val)
 				conf.ListaCadenas[cad] = make([]string, 5)
 				for j := 0; j < 5; j++ {
-					if cad+j*conf.Cadena > limiteJobs {
+					if cad+j*conf.Cadena > conf.MaxJobs {
 						continue
 					} else {
 						conf.ListaBatchs = append(conf.ListaBatchs, strconv.Itoa(cad+j*conf.Cadena))
